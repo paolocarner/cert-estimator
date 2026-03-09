@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BARE — Certification Cost Estimator</title>
+<link href="https://fonts.googleapis.com/css2?family=Alata&family=Lato:ital,wght@0,300;0,400;0,700;1,300&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- =====================================================================
+     BARE BRAND TOKENS — edit here, nowhere else
+     Colors from Bare_Cybersecurity_Brand_Book.pptx
+     ===================================================================== -->
+<style>
+:root {
+  /* ── Brand primaries ── */
+  --bare-purple:       #7030A0;   /* main brand purple */
+  --bare-purple-dark:  #4E1686;   /* darker variant / header bg */
+  --bare-purple-light: #C09FE1;   /* pale purple / accents */
+  --bare-purple-pale:  #F3ECF9;   /* very light bg tints */
+
+  /* ── SOC 2 accent (distinct from ISO) ── */
+  --soc-blue:          #0E2841;   /* dark navy from brand theme dk2 */
+  --soc-blue-mid:      #156082;   /* brand theme accent1 */
+  --soc-blue-pale:     #E8F2F8;
+
+  /* ── Neutrals ── */
+  --ink:               #1B1B1B;   /* brand near-black */
+  --muted:             #5E5E5E;   /* brand mid-grey */
+  --paper:             #F8F6FB;   /* off-white with purple undertone */
+  --card:              #FFFFFF;
+  --rule:              #E2D9EE;   /* purple-tinted divider */
+
+  /* ── Highlight / warning ── */
+  --amber:             #E97132;   /* brand accent2 (orange) for warnings */
+  --amber-pale:        #FDF0E6;
+
+  /* ── Typography ── */
+  --font-brand:        'Alata', sans-serif;
+  --font-body:         'Lato', sans-serif;
+  --font-mono:         'IBM Plex Mono', monospace;
+}
+</style>
+
+<style>
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+}
+
+/* ── HEADER ── */
+.header{
+  background:var(--bare-purple-dark);
+  padding:0 48px;
+  display:flex;align-items:stretch;justify-content:space-between;
+  border-bottom:3px solid var(--bare-purple-light);
+  position:relative;overflow:hidden;
+}
+.header::after{
+  content:'';position:absolute;
+  right:-80px;top:-80px;
+  width:320px;height:320px;border-radius:50%;
+  border:70px solid rgba(255,255,255,0.04);pointer-events:none;
+}
+.header-left{padding:26px 0 22px;display:flex;flex-direction:column;gap:4px;}
+.wordmark{
+  font-family:var(--font-brand);
+  font-size:30px;letter-spacing:0.12em;
+  color:#fff;line-height:1;text-transform:uppercase;
+}
+.wordmark-sub{
+  font-family:var(--font-mono);
+  font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
+  color:var(--bare-purple-light);margin-top:4px;
+}
+.header-right{display:flex;align-items:center;}
+
+/* ── FRAMEWORK TOGGLE ── */
+.fw-toggle{
+  display:flex;gap:3px;
+  background:rgba(255,255,255,0.07);
+  border-radius:3px;padding:4px;
+}
+.fw-btn{
+  padding:9px 22px;border:none;border-radius:2px;
+  cursor:pointer;font-family:var(--font-brand);
+  font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
+  transition:all 0.18s;background:transparent;color:rgba(255,255,255,0.45);
+}
+.fw-btn.active-iso{background:var(--bare-purple);color:#fff;box-shadow:0 2px 8px rgba(112,48,160,0.4);}
+.fw-btn.active-soc{background:var(--soc-blue);color:#fff;box-shadow:0 2px 8px rgba(14,40,65,0.4);}
+
+/* ── LAYOUT ── */
+.page{max-width:1160px;margin:0 auto;padding:0 32px 80px;}
+.intro{
+  padding:36px 0 26px;border-bottom:1px solid var(--rule);
+  margin-bottom:32px;display:flex;justify-content:space-between;
+  align-items:flex-end;gap:40px;
+}
+.intro h1{
+  font-family:var(--font-brand);font-size:26px;
+  letter-spacing:0.04em;line-height:1.25;
+  margin-bottom:10px;color:var(--bare-purple-dark);
+}
+.intro p{
+  font-size:13px;color:var(--muted);
+  font-weight:300;max-width:520px;line-height:1.65;
+}
+.intro-badge{
+  flex-shrink:0;background:var(--bare-purple-pale);
+  border:1px solid var(--bare-purple-light);border-radius:3px;
+  padding:10px 18px;font-family:var(--font-mono);
+  font-size:10px;color:var(--bare-purple);
+  letter-spacing:0.12em;text-transform:uppercase;
+  text-align:center;line-height:1.8;white-space:nowrap;
+}
+.grid{display:grid;grid-template-columns:1fr 400px;gap:32px;align-items:start;}
+
+/* ── CARDS ── */
+.card{
+  background:var(--card);border:1px solid var(--rule);
+  border-radius:3px;margin-bottom:16px;overflow:hidden;
+}
+.card-head{
+  padding:11px 20px;border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;gap:10px;
+  background:rgba(112,48,160,0.03);
+}
+.card-num{
+  font-family:var(--font-mono);font-size:10px;color:var(--muted);
+  background:var(--paper);border:1px solid var(--rule);
+  border-radius:2px;padding:2px 7px;
+}
+.card-title{
+  font-family:var(--font-brand);font-size:11px;
+  letter-spacing:0.12em;text-transform:uppercase;color:var(--bare-purple);
+}
+.card-title.soc{color:var(--soc-blue-mid);}
+.card-body{padding:20px;display:flex;flex-direction:column;gap:16px;}
+
+/* ── FORM ELEMENTS ── */
+.field{display:flex;flex-direction:column;gap:6px;}
+label{
+  font-family:var(--font-brand);font-size:10px;
+  letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);
+}
+.hint{font-size:12px;color:var(--muted);font-weight:300;line-height:1.55;}
+.sel-wrap{position:relative;}
+.sel-wrap::after{
+  content:'▾';position:absolute;right:12px;top:50%;
+  transform:translateY(-50%);color:var(--muted);font-size:11px;pointer-events:none;
+}
+select,input[type=number]{
+  font-family:var(--font-body);font-size:13px;
+  padding:10px 12px;border:1px solid var(--rule);border-radius:2px;
+  background:#fff;color:var(--ink);appearance:none;outline:none;width:100%;
+  transition:border-color 0.15s;
+}
+select:focus,input[type=number]:focus{border-color:var(--bare-purple);box-shadow:0 0 0 2px rgba(112,48,160,0.12);}
+.soc-active select:focus,.soc-active input[type=number]:focus{border-color:var(--soc-blue-mid);box-shadow:0 0 0 2px rgba(21,96,130,0.12);}
+
+/* slider */
+.sl-row{display:flex;align-items:center;gap:10px;}
+.sl-val{
+  font-family:var(--font-mono);font-size:13px;font-weight:500;
+  color:var(--bare-purple);min-width:36px;text-align:right;
+}
+.soc-active .sl-val{color:var(--soc-blue-mid);}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  background:var(--rule);border-radius:2px;outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  background:var(--bare-purple);cursor:pointer;
+  border:2px solid #fff;box-shadow:0 1px 4px rgba(112,48,160,0.35);
+  transition:transform 0.1s;
+}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);}
+.soc-active input[type=range]::-webkit-slider-thumb{
+  background:var(--soc-blue-mid);box-shadow:0 1px 4px rgba(21,96,130,0.35);
+}
+
+/* maturity buttons */
+.mat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+.mat-btn{
+  padding:9px 4px;border:1px solid var(--rule);border-radius:2px;
+  background:#fff;font-family:var(--font-body);font-size:10px;font-weight:700;
+  color:var(--muted);cursor:pointer;text-align:center;line-height:1.3;
+  transition:all 0.15s;
+}
+.mat-btn:not(.on):hover{border-color:var(--bare-purple-light);color:var(--bare-purple);background:var(--bare-purple-pale);}
+.soc-active .mat-btn:not(.on):hover{border-color:#8db8d0;color:var(--soc-blue-mid);background:var(--soc-blue-pale);}
+.mat-btn span{
+  display:block;font-family:var(--font-mono);
+  font-size:15px;font-weight:400;margin-bottom:2px;
+}
+.mat-btn.on{background:var(--bare-purple);border-color:var(--bare-purple);color:#fff;}
+.soc-active .mat-btn.on{background:var(--soc-blue);border-color:var(--soc-blue);}
+
+/* chip radios */
+.chip-row{display:flex;gap:7px;flex-wrap:wrap;}
+.chip{
+  flex:1;min-width:78px;border:1px solid var(--rule);border-radius:2px;
+  padding:9px 7px;cursor:pointer;text-align:center;background:#fff;
+  font-family:var(--font-body);font-size:11px;font-weight:700;color:var(--muted);
+  transition:all 0.15s;user-select:none;
+}
+.chip:not(.on):hover{border-color:var(--bare-purple-light);background:var(--bare-purple-pale);color:var(--bare-purple);}
+.soc-active .chip:not(.on):hover{border-color:#8db8d0;background:var(--soc-blue-pale);color:var(--soc-blue-mid);}
+.chip.on{border-color:var(--bare-purple);background:var(--bare-purple-pale);color:var(--bare-purple);}
+.soc-active .chip.on{border-color:var(--soc-blue-mid);background:var(--soc-blue-pale);color:var(--soc-blue-mid);}
+.chip sub{display:block;font-family:var(--font-mono);font-size:9px;margin-top:2px;opacity:0.7;}
+
+/* checkboxes */
+.chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.chk{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border:1px solid var(--rule);border-radius:2px;cursor:pointer;
+  background:#fff;transition:all 0.15s;user-select:none;
+}
+.chk:not(.on):hover{border-color:var(--bare-purple-light);background:var(--bare-purple-pale);}
+.soc-active .chk:not(.on):hover{border-color:#8db8d0;background:var(--soc-blue-pale);}
+.chk.on{border-color:var(--bare-purple);background:var(--bare-purple-pale);}
+.soc-active .chk.on{border-color:var(--soc-blue-mid);background:var(--soc-blue-pale);}
+.chk-box{
+  width:13px;height:13px;border:1.5px solid var(--rule);border-radius:2px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:8px;transition:all 0.15s;
+}
+.chk.on .chk-box{background:var(--bare-purple);border-color:var(--bare-purple);color:#fff;}
+.soc-active .chk.on .chk-box{background:var(--soc-blue-mid);border-color:var(--soc-blue-mid);}
+.chk-lbl{font-size:12px;font-weight:700;}
+.chk-disc{font-family:var(--font-mono);font-size:10px;color:var(--bare-purple);margin-left:auto;}
+.soc-active .chk-disc{color:var(--soc-blue-mid);}
+
+/* approach tabs */
+.app-tabs{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden;}
+.app-tab{
+  flex:1;padding:9px 6px;text-align:center;
+  font-family:var(--font-brand);font-size:11px;letter-spacing:0.06em;
+  cursor:pointer;background:#fff;color:var(--muted);
+  border:none;transition:all 0.15s;
+}
+.app-tab.on{background:var(--bare-purple);color:#fff;}
+.soc-active .app-tab.on{background:var(--soc-blue);}
+.rate-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* SOC panel */
+.soc-panel{display:none;}
+.soc-active .soc-panel{display:block;}
+.soc-active .iso-panel{display:none;}
+
+/* type toggle */
+.type-toggle{display:flex;border:1px solid var(--rule);border-radius:2px;overflow:hidden;}
+.type-btn{
+  flex:1;padding:10px 8px;font-family:var(--font-brand);
+  font-size:11px;letter-spacing:0.06em;cursor:pointer;
+  background:#fff;color:var(--muted);border:none;transition:all 0.15s;
+  line-height:1.3;text-align:center;
+}
+.type-btn.on{background:var(--soc-blue);color:#fff;}
+.type-note{
+  font-size:11px;color:var(--soc-blue);padding:10px 12px;
+  background:var(--soc-blue-pale);border:1px solid #b8cfe0;
+  border-radius:2px;line-height:1.55;
+}
+
+/* ── RESULTS PANEL ── */
+.results{position:sticky;top:24px;}
+.res-card{border-radius:3px;overflow:hidden;border:1px solid var(--rule);}
+
+.res-top{
+  background:var(--bare-purple-dark);
+  padding:22px 22px 18px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+}
+.soc-active .res-top{background:var(--soc-blue);}
+
+.res-fw-label{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:0.2em;
+  text-transform:uppercase;color:rgba(255,255,255,0.45);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.res-fw-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.12);}
+
+/* year tabs */
+.yr-tabs{display:flex;gap:4px;margin-bottom:14px;}
+.yr-tab{
+  padding:5px 12px;border:1px solid rgba(255,255,255,0.2);border-radius:2px;
+  font-family:var(--font-mono);font-size:10px;cursor:pointer;
+  background:transparent;color:rgba(255,255,255,0.45);transition:all 0.15s;
+}
+.yr-tab.on{background:rgba(255,255,255,0.15);color:#fff;border-color:rgba(255,255,255,0.4);}
+
+.cost-range{
+  font-family:var(--font-brand);font-size:28px;line-height:1.1;
+  color:#fff;margin-bottom:7px;letter-spacing:0.01em;
+}
+@keyframes cost-flash{from{opacity:0.5}to{opacity:1}}
+.cost-range.updated{animation:cost-flash 0.25s ease-out;}
+.cost-note{font-size:11px;color:rgba(255,255,255,0.55);font-weight:300;line-height:1.5;}
+
+/* hidden cost banner */
+.hcb{
+  background:rgba(0,0,0,0.18);padding:10px 14px;margin-top:14px;
+  border-radius:2px;border-left:2px solid var(--amber);
+}
+.hcb-label{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:0.15em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:3px;
+}
+.hcb-val{font-family:var(--font-brand);font-size:14px;color:#fff;}
+.hcb-note{font-size:10px;color:rgba(255,255,255,0.5);margin-top:2px;font-weight:300;}
+
+/* metrics */
+.metrics{
+  display:grid;grid-template-columns:1fr 1fr;
+  background:var(--bare-purple-dark);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.soc-active .metrics{background:var(--soc-blue);}
+.metric{padding:13px 18px;border-right:1px solid rgba(255,255,255,0.07);}
+.metric:nth-child(even){border-right:none;}
+.metric:nth-child(3),.metric:nth-child(4){border-top:1px solid rgba(255,255,255,0.07);}
+.m-lbl{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:0.15em;
+  text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:3px;
+}
+.m-val{font-family:var(--font-mono);font-size:18px;font-weight:500;color:#fff;}
+.m-unit{font-size:10px;color:rgba(255,255,255,0.45);margin-top:1px;font-weight:300;}
+
+/* phases */
+/* visual comparison chart */
+.viz-chart{background:var(--card);padding:16px 20px;border-bottom:1px solid var(--rule);}
+.viz-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.viz-group{margin-bottom:14px;}
+.viz-group:last-child{margin-bottom:0;}
+.viz-group-lbl{font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:300;}
+.viz-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.viz-bar-track{flex:1;height:8px;background:var(--rule);border-radius:4px;overflow:hidden;}
+.viz-bar-fill{height:100%;border-radius:4px;transition:width 0.4s ease;}
+.viz-bar-fill.yours{background:var(--bare-purple);}
+.viz-bar-fill.avg{background:#c8bfd8;}
+.soc-active .viz-bar-fill.yours{background:var(--soc-blue-mid);}
+.soc-active .viz-bar-fill.avg{background:#8ab4d4;}
+.viz-bar-val{font-family:var(--font-mono);font-size:10px;color:var(--muted);width:40px;text-align:right;}
+.viz-legend{display:flex;gap:16px;margin-top:12px;font-size:10px;color:var(--muted);font-weight:300;}
+.viz-leg-item{display:flex;align-items:center;gap:5px;}
+.viz-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.viz-dot.yours{background:var(--bare-purple);}
+.viz-dot.avg{background:#c8bfd8;}
+.soc-active .viz-dot.yours{background:var(--soc-blue-mid);}
+.soc-active .viz-dot.avg{background:#8ab4d4;}
+
+.phases{background:var(--card);padding:16px 20px;border-bottom:1px solid var(--rule);}
+.phases-lbl{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+}
+.ph-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.ph-name{font-size:11px;color:var(--muted);width:140px;flex-shrink:0;line-height:1.3;font-weight:300;}
+.ph-bar-bg{flex:1;height:3px;background:var(--rule);border-radius:2px;overflow:hidden;}
+.ph-bar{height:100%;background:var(--bare-purple);border-radius:2px;transition:width 0.35s ease;}
+.soc-active .ph-bar{background:var(--soc-blue-mid);}
+.ph-days{font-family:var(--font-mono);font-size:10px;color:var(--muted);width:32px;text-align:right;}
+
+/* breakdown */
+.breakdown{background:var(--card);padding:16px 20px;border-bottom:1px solid var(--rule);}
+.donut-wrap{display:flex;align-items:center;gap:18px;margin-bottom:16px;flex-wrap:wrap;}
+.donut-legend{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px;}
+.donut-leg-row{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-weight:300;}
+.donut-leg-swatch{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+.donut-leg-val{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--ink);}
+.bk-lbl{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+}
+.bk-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid var(--rule);font-size:12px;
+}
+.bk-item{color:var(--muted);font-weight:300;}
+.bk-item em{font-size:10px;color:#b0a8be;font-style:italic;margin-left:6px;}
+.bk-amt{font-family:var(--font-mono);font-size:12px;color:var(--ink);font-weight:500;}
+.bk-row.total{border-bottom:none;border-top:2px solid var(--rule);margin-top:6px;padding-top:11px;}
+.bk-row.total .bk-item{font-weight:700;color:var(--ink);font-size:13px;}
+.bk-row.total .bk-amt{color:var(--bare-purple);font-size:14px;}
+.soc-active .bk-row.total .bk-amt{color:var(--soc-blue-mid);}
+/* opportunity cost row — subdued, italic, accent left-border */
+.bk-row.opp-row{
+  border-left:2px solid var(--amber);
+  padding-left:8px;margin-left:-8px;
+  border-bottom:none;
+  background:rgba(233,113,50,0.03);
+}
+/* re-audit risk row — red-tinted warning, DIY only */
+.bk-row.reaudit-row{
+  border-left:2px solid #e74c3c;
+  padding-left:8px;margin-left:-8px;
+  border-bottom:none;
+  background:rgba(231,76,60,0.04);
+}
+
+/* ongoing */
+.ongoing{
+  background:var(--amber-pale);border-top:1px solid #f0c090;padding:16px 20px;
+}
+.ongoing-lbl{
+  font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:10px;
+}
+.og-row{
+  display:flex;justify-content:space-between;font-size:12px;
+  padding:5px 0;border-bottom:1px solid rgba(233,113,50,0.15);
+}
+.og-row:last-child{border:none;}
+.og-item{color:var(--amber);font-weight:300;}
+.og-amt{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--amber);}
+
+/* implementation insights */
+.insights{background:var(--card);padding:16px 20px;border-bottom:1px solid var(--rule);}
+.insights-hdr{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+}
+.insights-icon{font-size:13px;line-height:1;}
+.insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.insight-card{
+  background:var(--bg);border:1px solid var(--rule);
+  border-radius:4px;padding:10px 12px;
+  font-size:11px;color:var(--muted);line-height:1.65;font-weight:300;
+}
+@media(max-width:820px){.insights-grid{grid-template-columns:1fr;}}
+
+/* disclaimer & CTA */
+.disc{
+  background:rgba(0,0,0,0.025);border-top:1px solid var(--rule);
+  padding:13px 20px;font-size:10px;color:var(--muted);
+  line-height:1.65;font-weight:300;
+}
+.cta{
+  margin-top:13px;background:var(--bare-purple-dark);color:#fff;
+  border:none;padding:15px 20px;font-family:var(--font-brand);
+  font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+  cursor:pointer;width:100%;border-radius:3px;
+  transition:background 0.18s, transform 0.1s, box-shadow 0.18s;
+  box-shadow:0 2px 8px rgba(78,22,134,0.25);
+}
+.cta:hover{background:var(--bare-purple);box-shadow:0 4px 16px rgba(78,22,134,0.35);}
+.cta:active{transform:translateY(1px);}
+.soc-active .cta{background:var(--soc-blue);box-shadow:0 2px 8px rgba(14,40,65,0.3);}
+.soc-active .cta:hover{background:var(--soc-blue-mid);box-shadow:0 4px 16px rgba(14,40,65,0.4);}
+.cta-sub{text-align:center;font-size:11px;color:var(--muted);margin-top:8px;font-weight:300;}
+
+/* responsive */
+@media(max-width:820px){
+  .grid{grid-template-columns:1fr;}
+  .header{padding:18px 20px;flex-direction:column;gap:14px;align-items:flex-start;}
+  .page{padding:0 16px 60px;}
+  .intro{flex-direction:column;align-items:flex-start;}
+  .results{position:static;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="wordmark">BARE</div>
+    <div class="wordmark-sub">Cybersecurity · Advisory-First vCISO</div>
+  </div>
+  <div class="header-right">
+    <div class="fw-toggle">
+      <button class="fw-btn active-iso" id="isoBtn" onclick="setFw('iso')">ISO 27001</button>
+      <button class="fw-btn" id="socBtn" onclick="setFw('soc')">SOC 2</button>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="intro">
+    <div class="intro-text">
+      <h1>What will certification actually cost?</h1>
+      <p>A realistic estimate for European tech companies — including the line items that don't appear on most proposals but end up on your invoice anyway. Cash costs <em>and</em> internal time.</p>
+    </div>
+    <div class="intro-badge" id="introBadge">ISO 27001<br>Implementation<br>Estimator</div>
+  </div>
+
+  <div class="grid">
+    <!-- ══════════════════════════════════════
+         INPUTS
+    ══════════════════════════════════════ -->
+    <div id="inputsCol">
+
+      <!-- 01 COMPANY PROFILE -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">01</span>
+          <span class="card-title" id="ct1">Company Profile</span>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>Company Size</label>
+            <div class="sel-wrap">
+              <select id="sz" onchange="calc()">
+                <option value="s25">~25 employees (Seed / early Series A)</option>
+                <option value="s60" selected>~60 employees (Series A)</option>
+                <option value="s120">~120 employees (Series B)</option>
+                <option value="s200">~200 employees (Late Series B)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>IT / Security Team Size</label>
+            <div class="sl-row">
+              <input type="range" id="engSize" min="1" max="10" value="2"
+                oninput="document.getElementById('engV').textContent=this.value;calc()">
+              <span class="sl-val" id="engV">2</span>
+            </div>
+            <span class="hint" id="engSizeHint">The people who will own the ISMS project internally — typically IT, security, or ops staff, not developers. Most Series A startups have 1–3 people in this function.</span>
+          </div>
+          <div class="field">
+            <label>Avg. Fully-Loaded Cost / Person / Year (€)</label>
+            <input type="number" id="engCost" value="80000" onchange="syncIntRate();calc()">
+            <span class="hint">IT/security staff in EU: €60k–€100k fully loaded. Used to price the opportunity cost of their time on the ISMS project.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02 SCOPE & MATURITY -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num">02</span>
+          <span class="card-title" id="ct2">Scope &amp; Security Maturity</span>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>In-Scope Systems &amp; Services</label>
+            <div class="sl-row">
+              <input type="range" id="systems" min="3" max="40" value="15"
+                oninput="document.getElementById('sysV').textContent=this.value;calc()">
+              <span class="sl-val" id="sysV">15</span>
+            </div>
+            <span class="hint">Cloud services, SaaS tools, and infrastructure components in scope</span>
+          </div>
+          <div class="field">
+            <label>Infrastructure</label>
+            <div class="chip-row" id="infraChips">
+              <div class="chip on" data-v="0.88" onclick="setChip('infraChips',this,'0.88')">Cloud-native<sub>0.88×</sub></div>
+              <div class="chip" data-v="1.0"  onclick="setChip('infraChips',this,'1.0')">Hybrid<sub>1.0×</sub></div>
+              <div class="chip" data-v="1.18" onclick="setChip('infraChips',this,'1.18')">On-premise<sub>1.18×</sub></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Current Security Maturity</label>
+            <div class="mat-row" id="matRow">
+              <div class="mat-btn" data-v="1" onclick="setMat(1)"><span>1</span>Initial</div>
+              <div class="mat-btn" data-v="2" onclick="setMat(2)"><span>2</span>Developing</div>
+              <div class="mat-btn on" data-v="3" onclick="setMat(3)"><span>3</span>Defined</div>
+              <div class="mat-btn" data-v="4" onclick="setMat(4)"><span>4</span>Managed</div>
+              <div class="mat-btn" data-v="5" onclick="setMat(5)"><span>5</span>Optimised</div>
+            </div>
+            <span class="hint" id="matHint">Processes documented; some controls in place but not consistently measured.</span>
+          </div>
+          <div class="field">
+            <label>Head start — existing frameworks</label>
+            <span class="hint" style="margin-bottom:6px">Already have one of these? It reduces implementation effort.</span>
+            <div class="chk-grid" id="fwChks">
+              <div class="chk" data-d="0.10" onclick="toggleChk(this)"><div class="chk-box"></div><span class="chk-lbl" id="fwChkOtherLbl">SOC 2</span><span class="chk-disc">−10%</span></div>
+              <div class="chk" data-d="0.07" onclick="toggleChk(this)"><div class="chk-box"></div><span class="chk-lbl">NIST CSF</span><span class="chk-disc">−7%</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Compliance Automation Platform</label>
+            <div class="chip-row" id="automChips">
+              <div class="chip on" data-v="standard" onclick="setChip('automChips',this,'standard')">Standard<sub>basic tooling</sub></div>
+              <div class="chip" data-v="autom" onclick="setChip('automChips',this,'autom')">Using one<sub>Vanta / Drata / Sprinto</sub></div>
+              <div class="chip" data-v="manual" onclick="setChip('automChips',this,'manual')">Manual<sub>spreadsheets</sub></div>
+            </div>
+            <span class="hint" id="automHint">Standard security tooling is included in base costs. A compliance platform reduces effort by ~18%; manual evidence collection adds ~30%.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 SOC 2 SPECIFICS (hidden when ISO active) -->
+      <div class="card soc-panel" id="socCard">
+        <div class="card-head">
+          <span class="card-num">03</span>
+          <span class="card-title soc">SOC 2 Specifics</span>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>Report Type</label>
+            <div class="type-toggle">
+              <button class="type-btn" id="t1Btn" onclick="setSocType('type1')">Type I<br><span style="font-size:9px;opacity:0.6">Point-in-time</span></button>
+              <button class="type-btn on" id="t2Btn" onclick="setSocType('type2')">Type II<br><span style="font-size:9px;opacity:0.6">6–12 month obs.</span></button>
+            </div>
+            <div class="type-note" id="socTypeNote"><strong>Type II is what enterprise customers actually require.</strong> Type I is faster but most prospects will ask for Type II within 18 months — meaning two audits.</div>
+          </div>
+          <div class="field">
+            <label>Trust Services Categories</label>
+            <div class="chk-grid" id="tscChks">
+              <div class="chk on" data-d="0" onclick="toggleTsc(this)"><div class="chk-box">✓</div><span class="chk-lbl">Security</span><span class="chk-disc">required</span></div>
+              <div class="chk" data-d="0.12" onclick="toggleTsc(this)"><div class="chk-box"></div><span class="chk-lbl">Availability</span><span class="chk-disc">+12%</span></div>
+              <div class="chk" data-d="0.10" onclick="toggleTsc(this)"><div class="chk-box"></div><span class="chk-lbl">Confidentiality</span><span class="chk-disc">+10%</span></div>
+              <div class="chk" data-d="0.15" onclick="toggleTsc(this)"><div class="chk-box"></div><span class="chk-lbl">Privacy</span><span class="chk-disc">+15%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03/04 IMPLEMENTATION APPROACH -->
+      <div class="card">
+        <div class="card-head">
+          <span class="card-num" id="approachNum">03</span>
+          <span class="card-title" id="ct3">Implementation Approach</span>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <div class="app-tabs" id="appTabs">
+              <button class="app-tab" onclick="setApproach('diy')">DIY / Internal</button>
+              <button class="app-tab on" onclick="setApproach('mixed')">Advisory Partner</button>
+              <button class="app-tab" onclick="setApproach('full')">Full Outsource</button>
+            </div>
+            <span class="hint" id="approachHint" style="margin-top:6px">Advisory partner handles documentation, risk treatment, control implementation, and audit prep. Your team participates but doesn't run it (~2–4 weeks internal time).</span>
+          </div>
+          <div class="rate-grid">
+            <div class="field">
+              <label>Consultant Rate / Day (€)</label>
+              <input type="number" id="consultRate" value="1200" onchange="calc()">
+              <span class="hint">BARE market rate: €1,000–€1,500</span>
+            </div>
+            <div class="field">
+              <label>Internal Rate / Day (€)</label>
+              <input type="number" id="intRate" value="385" onchange="calc()">
+              <span class="hint">Auto-set from engineer cost</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /inputs -->
+
+    <!-- ══════════════════════════════════════
+         RESULTS
+    ══════════════════════════════════════ -->
+    <div class="results">
+      <div class="res-card" id="resCard">
+        <div class="res-top">
+          <div class="res-fw-label" id="resFwLabel">ISO 27001 · Year 1 estimate</div>
+          <div class="yr-tabs">
+            <button class="yr-tab on" id="yr1Tab" onclick="setYr(1)">Year 1</button>
+            <button class="yr-tab" id="yr2Tab" onclick="setYr(2)">Year 2</button>
+            <button class="yr-tab" id="yr3Tab" onclick="setYr(3)">Year 3</button>
+          </div>
+          <div class="cost-range" id="costRange">—</div>
+          <div class="cost-note" id="costNote">Cash costs only. Internal time cost shown below.</div>
+          <div class="hcb">
+            <div class="hcb-label">Opportunity cost: IT / security staff time</div>
+            <div class="hcb-val" id="hiddenCost">—</div>
+            <div class="hcb-note" id="hiddenNote">—</div>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric"><div class="m-lbl">Effort</div><div class="m-val" id="mEffort">—</div><div class="m-unit">person-days</div></div>
+          <div class="metric"><div class="m-lbl">Duration</div><div class="m-val" id="mDuration">—</div><div class="m-unit">weeks</div></div>
+          <div class="metric"><div class="m-lbl">Audit Days</div><div class="m-val" id="mAudit">—</div><div class="m-unit">ISO 27006</div></div>
+          <div class="metric"><div class="m-lbl">Internal FTE</div><div class="m-val" id="mFte">—</div><div class="m-unit">required</div></div>
+        </div>
+
+        <div class="phases" id="phasesBlock">
+          <div class="phases-lbl">Effort by phase</div>
+          <div id="phaseRows"></div>
+        </div>
+
+        <div class="breakdown" id="breakdownBlock">
+          <div class="bk-lbl">Cost breakdown — Year 1 cash costs</div>
+          <div class="donut-wrap">
+            <canvas id="bkDonut" width="130" height="130" style="flex-shrink:0;"></canvas>
+            <div class="donut-legend" id="donutLegend"></div>
+          </div>
+          <div class="bk-row" id="bkRow1"><span class="bk-item" id="bkL1">Advisory / consultant fees</span><span class="bk-amt" id="bkV1">—</span></div>
+          <div class="bk-row"><span class="bk-item" id="bkL2">Internal labour cost</span><span class="bk-amt" id="bkV2">—</span></div>
+          <div class="bk-row"><span class="bk-item" id="bkL3">Security tooling <em id="bkL3em">awareness + vuln scanning</em></span><span class="bk-amt" id="bkV3">—</span></div>
+          <div class="bk-row" id="bkAutomRow" style="display:none"><span class="bk-item">Compliance automation platform <em>Vanta / Drata</em></span><span class="bk-amt" id="bkVAutom">—</span></div>
+          <div class="bk-row"><span class="bk-item">Penetration test <em>external, required</em></span><span class="bk-amt" id="bkV4">—</span></div>
+          <div class="bk-row"><span class="bk-item" id="bkCertLabel">Certification body audit</span><span class="bk-amt" id="bkV5">—</span></div>
+          <div class="bk-row opp-row"><span class="bk-item" style="font-style:italic">Opportunity cost <em>IT/security staff time, not invoiced</em></span><span class="bk-amt" id="bkVOpp" style="font-style:italic;color:var(--amber)">—</span></div>
+          <div class="bk-row reaudit-row" id="bkReauditRow" style="display:none"><span class="bk-item" id="bkReauditLbl">Re-audit risk <em>40% probability × €8k–€18k</em></span><span class="bk-amt" id="bkVReaudit" style="color:#c0392b;font-style:italic">—</span></div>
+          <div class="bk-row total"><span class="bk-item" id="bkTotalLbl">Realistic Year 1 total</span><span class="bk-amt" id="bkTotal">—</span></div>
+        </div>
+
+        <div class="insights" id="insightsBlock">
+          <div class="insights-hdr">
+            <span class="insights-icon">💡</span>
+            <span id="insightsTitle">Implementation insights</span>
+          </div>
+          <div class="insights-grid" id="insightsGrid"></div>
+        </div>
+
+        <div class="ongoing" id="ongoingBlock">
+          <div class="ongoing-lbl" id="ongoingLbl">Year 2 ongoing costs</div>
+          <div class="og-row"><span class="og-item" id="og1Lbl">Surveillance audit</span><span class="og-amt" id="og1V">—</span></div>
+          <div class="og-row"><span class="og-item">Security tooling (annual)</span><span class="og-amt" id="og2V">—</span></div>
+          <div class="og-row" id="ogRetainerRow"><span class="og-item">Advisory retainer <em style="font-size:10px">(ISMS maintenance)</em></span><span class="og-amt" id="og3V">—</span></div>
+          <div class="og-row" style="border-top:1px solid rgba(233,113,50,0.25);margin-top:4px;padding-top:8px">
+            <span class="og-item" style="font-weight:700">Annual total</span>
+            <span class="og-amt" style="font-weight:700" id="ogTotal">—</span>
+          </div>
+        </div>
+
+        <div class="disc">
+          Figures are indicative, anchored to ISO 27006:2015 audit day tables and European market data (BSI, DNV, Bureau Veritas rates). Actual costs depend on ISMS scope, documentation maturity, and choice of certification body. BARE engagements are fixed-fee — you'll know the number before we start.
+        </div>
+      </div>
+
+      <button class="cta" onclick="openCta()">Get a fixed-fee proposal from BARE →</button>
+      <div class="cta-sub">Vendor-neutral · Advisory-first · No commitment</div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================================================
+     CONFIGURATION — ALL TWEAKABLE NUMBERS LIVE HERE
+     Change these values; nothing else needs editing.
+
+     STRUCTURE:
+       ISO / SOC base effort    → C.ISO_BASE, C.SOC_BASE
+       Audit days (ISO 27006)   → C.AUDIT_DAYS
+       Cert body cost ranges    → C.ISO_CERT_COST, C.SOC_CERT_TYPE1/2
+       Tooling costs            → C.TOOLING, C.AUTOM_PLATFORM
+       Pentest range            → C.PENTEST
+       Maturity multipliers     → C.MATURITY_STEP
+       Framework discounts      → HTML data-d attributes on .chk elements
+       TSC add-ons (SOC)        → HTML data-d attributes on #tscChks .chk
+       Infra multipliers        → HTML data-v attributes on #infraChips .chip
+       Approach splits          → C.APPROACH_SPLITS
+       Year 2/3 surveillance    → C.SURV_COST_ISO, C.SOC_REATTEST_PCT
+       Advisory retainer range  → C.RETAINER
+       Cost range variance      → C.RANGE_LO_MULT, C.RANGE_HI_MULT
+       Hidden cost variance     → C.HIDDEN_LO_MULT, C.HIDDEN_HI_MULT
+===================================================================== -->
+<script>
+const C = {
+
+  // ── EFFORT BASE (person-days by company size bracket)
+  // Calibrated to article ranges: ISO advisory Year 1 realistic €36k–€88k
+  ISO_BASE: { s25: 18, s60: 27, s120: 40, s200: 58 },
+  SOC_BASE: { s25: 14, s60: 22, s120: 34, s200: 48 },
+
+  // ── ISO 27006 AUDIT DAYS (by size, used in metrics display only)
+  AUDIT_DAYS: { s25: 3.5, s60: 6.8, s120: 10.5, s200: 15.0 },
+
+  // ── CERTIFICATION BODY COST RANGES [low, high] in EUR
+  // Source: BSI/DNV/Bureau Veritas EU rates, article data
+  ISO_CERT_COST: {
+    s25:  [8000,  12000],
+    s60:  [10000, 16000],
+    s120: [13000, 18000],
+    s200: [15000, 22000],
+  },
+  SOC_CERT_TYPE1: {
+    s25:  [8000,  12000],
+    s60:  [10000, 15000],
+    s120: [12000, 20000],
+    s200: [15000, 25000],
+  },
+  SOC_CERT_TYPE2: {
+    s25:  [15000, 22000],
+    s60:  [18000, 28000],
+    s120: [22000, 32000],
+    s200: [25000, 38000],
+  },
+
+  // ── TOOLING (annual, EUR)
+  TOOLING:         [3500,  10000],   // security awareness + vuln scanning
+  AUTOM_PLATFORM:  [8000,  20000],   // SOC 2 compliance automation (Vanta/Drata)
+
+  // ── PENTEST (one-off, EUR)
+  PENTEST: [5000, 15000],
+
+  // ── MATURITY EFFECT
+  // Per level away from 3 (baseline): effort multiplied by (1 + step * delta)
+  // Level 1 (+2 steps) → effort × 1.35; Level 5 (-2 steps) → effort × 0.65
+  MATURITY_STEP: 0.175,
+
+  // ── EXISTING CERT DISCOUNT CAP (fraction, 0–1)
+  // Prevents stacking discounts from exceeding this reduction
+  DISCOUNT_CAP: 0.25,
+
+  // ── APPROACH SPLITS [internal fraction, external fraction]
+  APPROACH_SPLITS: {
+    diy:   [1.00, 0.00],
+    mixed: [0.30, 0.70],
+    full:  [0.15, 0.85],
+  },
+
+  // ── COST RANGE VARIANCE (applied to midpoint)
+  RANGE_LO_MULT: 0.82,
+  RANGE_HI_MULT: 1.35,
+
+  // ── OPPORTUNITY COST PREMIUM
+  // Internal time costs more than the salary day rate implies — engineers
+  // doing compliance work aren't shipping product. 1.35 = 35% premium on
+  // the fully-loaded day rate to reflect true opportunity cost.
+  // Defensible range: 1.2 (conservative) – 1.5 (high-growth startup)
+  OPP_COST_PREMIUM: 1.35,
+
+  // ── HIDDEN COST VARIANCE (applied to opportunity cost midpoint)
+  HIDDEN_LO_MULT: 0.80,
+  HIDDEN_HI_MULT: 1.40,
+
+  // ── YEAR 2/3 ONGOING: SURVEILLANCE AUDITS (ISO, EUR)
+  SURV_COST_ISO: [4000, 8000],
+
+  // ── SOC 2 RE-ATTESTATION (fraction of original cert cost, Year 2+)
+  SOC_REATTEST_PCT: 0.90,
+
+  // ── ISO RE-CERTIFICATION (Year 3, fraction of original cert cost)
+  ISO_RECERT_PCT: 0.70,
+
+  // ── ADVISORY RETAINER for ongoing ISMS maintenance (EUR/year)
+  // Shown in Year 2/3 if approach !== 'diy'
+  // Adjust to match BARE GUARDIAN / PARTNER tier pricing
+  RETAINER: [6000, 18000],
+
+  // ── SOC TYPE I EFFORT REDUCTION (fraction of Type II effort)
+  SOC_TYPE1_MULT: 0.62,
+
+  // ── SOC MANUAL (no automation platform) EFFORT UPLIFT
+  SOC_MANUAL_MULT: 1.30,
+  AUTOM_EFFORT_MULT: 0.82,   // −18% effort when compliance platform used (policy templates + automated evidence collection)
+
+  // ── DURATION: FTE CAPACITY (days/week available for ISMS work)
+  // DIY: ~½ day/week — it's someone's side project, squeezed in around their real job
+  // Mixed: ~2 days/week — advisory drives, internal handles reviews & evidence
+  // Full: ~3 days/week — consultant leads, internal just attends walkthroughs
+  DURATION_FTE_CAP: { diy: 0.10, mixed: 0.40, full: 0.60 },
+
+  // ── MAX PARALLEL CONTRIBUTORS (diminishing returns ceiling)
+  // ISMS work is largely sequential (policy → risk → controls → audit prep).
+  // Beyond ~4 people, coordination overhead negates further speed gains.
+  PARALLEL_CAP: 4,
+
+  // ── DURATION: CALENDAR FLOOR (weeks) — irreducible regardless of effort/FTE
+  // Captures mandatory waiting periods: policy review cycles, CB scheduling
+  // lead times (6–10 weeks), risk treatment implementation, board sign-off.
+  // Key: DIY maturity 1–2 = 8–9 months from real-world experience.
+  // maturity band: 'low' = 1–2, 'mid' = 3, 'high' = 4–5
+  CALENDAR_FLOOR: {
+    diy:   { low: 36, mid: 28, high: 20 },
+    mixed: { low: 24, mid: 18, high: 13 },
+    full:  { low: 20, mid: 16, high: 12 },
+  },
+
+  // ── LOCATION UPLIFT (days per additional location)
+  // Not currently exposed in UI — set to 0 to disable
+  LOCATION_UPLIFT_PER: 0,
+
+  // ── SYSTEMS EFFORT UPLIFT (log-scale coefficient)
+  // Each additional in-scope system adds effort on a log curve (diminishing returns)
+  SYSTEMS_LOG_COEFF: 1.6,
+
+  // ── MATURITY HINT TEXT (displayed below maturity selector)
+  MATURITY_HINTS: {
+    1: 'Ad-hoc processes, minimal documentation. Significant groundwork required.',
+    2: 'Some policies exist but inconsistently applied. Gaps in key control areas.',
+    3: 'Processes documented; some controls in place but not consistently measured.',
+    4: 'Controls measured and monitored. Metrics-driven security programme.',
+    5: 'Continuous improvement embedded. Near audit-ready.',
+  },
+
+  // ── DIY RE-AUDIT RISK
+  // First-attempt pass rate for DIY is ~60% (vs ~90% with advisory partner).
+  // The expected cost of a failed Stage 2 audit: re-scheduling (6–10 week CB
+  // lead time), re-paying auditor days, plus another round of internal remediation.
+  // Source: industry practitioner data; BSI/DNV auditor feedback.
+  DIY_PASS_RATE:    0.60,   // 60% first-attempt success rate for DIY
+  DIY_REAUDIT_COST: [8000, 18000],  // incremental cost of a re-audit attempt [lo, hi]
+
+  // ── APPROACH HINT TEXT
+  APPROACH_HINTS: {
+    diy:   'Your team runs the entire process. Lower upfront cash cost, but ~30–40 weeks of senior IT/security time and a 40% chance of failing the Stage 2 audit on first attempt — adding €8k–€18k and 10–16 weeks.',
+    mixed: 'Advisory partner handles documentation, risk treatment, control implementation, and audit prep. Your team participates but doesn\'t run it (~2–4 weeks internal time). First-attempt pass rate ~90%.',
+    full:  'Consultant manages end-to-end. Minimal internal burden but highest cash cost. Suitable when internal bandwidth is the binding constraint. First-attempt pass rate ~90%.',
+  },
+
+  // ── IMPLEMENTATION INSIGHTS (dynamic cards — keyed by framework + approach)
+  INSIGHTS: {
+    iso: {
+      diy: [
+        'First-attempt pass rates for DIY ISO 27001 are around 60% — the most common failure point is incomplete risk treatment plans, not missing controls.',
+        'Gap analysis upfront saves weeks: companies that skip it spend 2× longer in implementation fixing surprises during the Stage 2 audit.',
+        'The ISMS scope document is what auditors read first. A vague scope is the #1 reason for Stage 1 non-conformities.',
+        'ISO 27001:2022 added 11 new Annex A controls. If your team hasn\'t mapped these yet, budget an extra 2–3 days for the delta assessment.',
+      ],
+      mixed: [
+        'Advisory-led implementations pass Stage 2 audits at ~90%. The biggest time saver: pre-built policy templates already aligned to your tech stack.',
+        'Your advisory partner should own the Statement of Applicability — it\'s the document auditors scrutinise most and the hardest to get right without experience.',
+        'Mixed-mode works best when internal staff own evidence collection; your advisor handles documentation, risk treatment, and audit prep.',
+        'Certification bodies (BSI, DNV, Bureau Veritas) vary in scheduling lead times by 6–10 weeks. Lock in your audit slot as early as month two.',
+      ],
+      full: [
+        'Fully outsourced ISO 27001 reduces internal time to ~1–2 hours/week for reviews and sign-offs — the rest is managed by your consultant.',
+        'Ask your consultant to deliver a transfer-ready ISMS — documented procedures your team can operate and evidence independently after certification.',
+        'Full outsourcing makes most sense when engineering bandwidth is the binding constraint, not budget. The calendar floor is the same either way.',
+        'Expect 3–4 structured review sessions with stakeholders — auditors interview your team directly, not just the consultant. Prep them.',
+      ],
+    },
+    soc: {
+      diy: [
+        'SOC 2 Type II requires a minimum 3–6 month observation period before the audit window opens — start evidence collection from day one, not month three.',
+        'The most common DIY SOC 2 failure: gaps in change management logs and access review evidence. Automate both as early as possible.',
+        'Without a compliance platform (Vanta, Drata), expect 30–40% more internal time on evidence collection and responding to auditor requests.',
+        'Auditors request the same evidence in different formats across Trust Service Criteria. A central evidence repository cuts audit prep time by ~40%.',
+      ],
+      mixed: [
+        'An advisory partner pre-maps your existing security tools to SOC 2 controls — saving 15–20 days compared to building the mapping from scratch.',
+        'Only expand scope to Availability or Confidentiality TSCs if a customer has explicitly requested them — each adds meaningful audit surface and cost.',
+        'Mixed-mode SOC 2 typically completes in 18–24 weeks. The main time compressor: your advisor handles auditor queries directly, not you.',
+        'Type I first, Type II later: if you\'re under enterprise sales pressure, a Type I in 8–10 weeks buys time while Type II evidence accumulates.',
+      ],
+      full: [
+        'Fully managed SOC 2 reduces your team\'s burden to ~2 hours/week — mainly reviewing outputs and signing off policies as the named control owners.',
+        'A good SOC 2 partner integrates with your CI/CD pipeline for automated evidence collection — reducing annual re-attestation cost by 20–30%.',
+        'Full outsourcing has the fastest ROI for SaaS companies in active enterprise sales — SOC 2 certification unblocks deals worth 10–50× the cost.',
+        'Ensure your partner uses a Big 4 or top-tier CPA firm for the audit itself — some enterprise procurement teams specify this as a requirement.',
+      ],
+    },
+  },
+
+  // ── INDUSTRY BENCHMARKS (visual comparison chart)
+  // Source: Vanta 2023 State of Trust report + ISACA/BSI survey data (all-industry avg)
+  INDUSTRY_AVG: {
+    iso: { effort: 90, duration: 52 },  // person-days / weeks
+    soc: { effort: 65, duration: 24 },
+  },
+
+  // ── CTA EMAIL
+  CTA_EMAIL: 'hello@bare-consult.nl',
+};
+
+// =====================================================================
+// STATE (don't edit — controlled by UI interactions)
+// =====================================================================
+let fw = 'iso';
+let maturity = 3;
+let infraMult = 0.88;
+let approachMode = 'mixed';
+let certDiscounts = [];
+let socType = 'type2';
+let tscAdd = 0;
+let automMode = 'standard';
+let activeYr = 1;
+
+// ── HELPERS ──
+const mid   = r => (r[0] + r[1]) / 2;
+const fmt   = n => '€' + Math.round(n).toLocaleString('de-DE');
+const fmtR  = (lo, hi) => fmt(lo) + ' – ' + fmt(hi);
+
+function flashEl(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('updated');
+  void el.offsetWidth; // force reflow to restart animation
+  el.classList.add('updated');
+}
+
+function syncIntRate() {
+  const annual = parseFloat(document.getElementById('engCost').value) || 100000;
+  document.getElementById('intRate').value = Math.round(annual / 260);
+}
+
+function engDayRate() {
+  return (parseFloat(document.getElementById('engCost').value) || 100000) / 260;
+}
+
+// ── SETTERS ──
+function setFw(f) {
+  fw = f;
+  document.getElementById('isoBtn').className = 'fw-btn' + (f === 'iso' ? ' active-iso' : '');
+  document.getElementById('socBtn').className = 'fw-btn' + (f === 'soc' ? ' active-soc' : '');
+  document.getElementById('introBadge').innerHTML =
+    f === 'iso' ? 'ISO 27001<br>Implementation<br>Estimator' : 'SOC 2<br>Readiness<br>Estimator';
+  document.getElementById('approachNum').textContent = f === 'soc' ? '04' : '03';
+  document.body.classList.toggle('soc-active', f === 'soc');
+  document.getElementById('mAudit').parentElement.style.opacity = f === 'soc' ? '0.3' : '1';
+  // Swap the "other framework" checkbox label so it always shows the opposite cert
+  document.getElementById('fwChkOtherLbl').textContent = f === 'iso' ? 'SOC 2' : 'ISO 27001';
+  // Swap the team size hint — no ISMS terminology for SOC 2
+  document.getElementById('engSizeHint').textContent = f === 'iso'
+    ? 'The people who will own the ISMS project internally — typically IT, security, or ops staff, not developers. Most Series A startups have 1–3 people in this function.'
+    : 'The people who will own the SOC 2 programme internally — typically IT, security, or ops staff, not developers. Most Series A startups have 1–3 people in this function.';
+  calc();
+}
+
+function setMat(v) {
+  maturity = v;
+  document.querySelectorAll('.mat-btn').forEach(b =>
+    b.classList.toggle('on', parseInt(b.dataset.v) === v));
+  document.getElementById('matHint').textContent = C.MATURITY_HINTS[v];
+  calc();
+}
+
+function setChip(groupId, el, v) {
+  document.querySelectorAll('#' + groupId + ' .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  if (groupId === 'infraChips') infraMult = parseFloat(v);
+  if (groupId === 'automChips') {
+    automMode = v;
+    document.getElementById('automHint').textContent = v === 'autom'
+      ? 'Adds €8k–€20k/year tooling cost. Policy templates + automated evidence collection reduce effort by ~18%.'
+      : v === 'manual'
+      ? 'No tooling. Manual evidence collection and policy authoring adds ~30% effort across the project.'
+      : 'Standard security tooling included in base costs (vulnerability scanning, awareness platform).';
+  }
+  calc();
+}
+
+function toggleChk(el) {
+  el.classList.toggle('on');
+  el.querySelector('.chk-box').textContent = el.classList.contains('on') ? '✓' : '';
+  certDiscounts = Array.from(document.querySelectorAll('#fwChks .chk.on'))
+    .map(e => parseFloat(e.dataset.d));
+  calc();
+}
+
+function toggleTsc(el) {
+  if (el.querySelector('.chk-lbl').textContent === 'Security') return;
+  el.classList.toggle('on');
+  el.querySelector('.chk-box').textContent = el.classList.contains('on') ? '✓' : '';
+  tscAdd = Array.from(document.querySelectorAll('#tscChks .chk.on'))
+    .filter(e => e.querySelector('.chk-lbl').textContent !== 'Security')
+    .reduce((a, e) => a + parseFloat(e.dataset.d), 0);
+  calc();
+}
+
+function setSocType(t) {
+  socType = t;
+  document.getElementById('t1Btn').classList.toggle('on', t === 'type1');
+  document.getElementById('t2Btn').classList.toggle('on', t === 'type2');
+  document.getElementById('socTypeNote').innerHTML = t === 'type1'
+    ? 'Faster and cheaper, but most enterprise prospects require Type II. Consider whether you\'ll need to re-do this within 18 months.'
+    : '<strong>Type II is what enterprise customers actually require.</strong> Type I is faster but most prospects will ask for Type II within 18 months — meaning two audits.';
+  calc();
+}
+
+function setApproach(m) {
+  approachMode = m;
+  document.querySelectorAll('.app-tab').forEach((t, i) =>
+    t.classList.toggle('on', ['diy', 'mixed', 'full'][i] === m));
+  document.getElementById('approachHint').textContent = C.APPROACH_HINTS[m];
+  calc();
+}
+
+function setYr(y) {
+  activeYr = y;
+  ['yr1Tab','yr2Tab','yr3Tab'].forEach((id, i) =>
+    document.getElementById(id).classList.toggle('on', i + 1 === y));
+  document.getElementById('resFwLabel').textContent =
+    (fw === 'iso' ? 'ISO 27001' : 'SOC 2') + ' · Year ' + y + ' estimate';
+  document.getElementById('phasesBlock').style.display = y === 1 ? 'block' : 'none';
+  document.getElementById('breakdownBlock').style.display = y === 1 ? 'block' : 'none';
+  calc();
+}
+
+// ── CORE CALCULATION ──
+function calc() {
+  const sz = document.getElementById('sz').value;
+  const systems = parseInt(document.getElementById('systems').value) || 15;
+  const engSize = parseInt(document.getElementById('engSize').value) || 1;
+  const engDayR = engDayRate();
+  const consultR = parseFloat(document.getElementById('consultRate').value) || 1200;
+  const intR = parseFloat(document.getElementById('intRate').value) || 385;
+  const isFw = fw === 'iso';
+
+  // 1. BASE EFFORT
+  let effort = isFw ? C.ISO_BASE[sz] : C.SOC_BASE[sz];
+
+  // 2. SYSTEMS UPLIFT (log-scale)
+  effort += Math.log(systems) * C.SYSTEMS_LOG_COEFF;
+
+  // 3. INFRASTRUCTURE MULTIPLIER
+  effort *= infraMult;
+
+  // 4. MATURITY MULTIPLIER
+  effort *= 1 + (3 - maturity) * C.MATURITY_STEP;
+
+  // 5. EXISTING CERT DISCOUNTS (additive, capped)
+  const disc = Math.min(certDiscounts.reduce((a, b) => a + b, 0), C.DISCOUNT_CAP);
+  effort *= (1 - disc);
+
+  // 6. SOC-SPECIFIC ADJUSTMENTS
+  if (!isFw) {
+    effort *= (1 + tscAdd);
+    if (socType === 'type1') effort *= C.SOC_TYPE1_MULT;
+  }
+
+  // 6b. AUTOMATION PLATFORM EFFORT REDUCTION — applies to both ISO and SOC 2
+  // Pre-built policy templates + automated evidence collection reduce total effort
+  // by ~18%. Manual overhead (no platform) adds 30% effort instead.
+  if (automMode === 'autom')   effort *= C.AUTOM_EFFORT_MULT;
+  if (automMode === 'manual')  effort *= C.SOC_MANUAL_MULT;
+
+  effort = Math.round(effort * 10) / 10;
+
+  // 7. DAY SPLITS
+  const [intFrac, extFrac] = C.APPROACH_SPLITS[approachMode];
+  const intDays = effort * intFrac;
+  const extDays = effort * extFrac;
+
+  // 8. LABOUR COSTS
+  // labourExt: real cash leaving the business (invoiced consultant days)
+  // labourIntCash: DIY = €0 (never hits an invoice); mixed/full = salary cost
+  //                of internal days (management notices the utilisation drain)
+  const labourExt     = extDays * consultR;
+  const labourIntCash = approachMode === 'diy' ? 0 : (intDays * intR);
+
+  // 9. TOOLING
+  const toolMid = mid(C.TOOLING);
+  const automMid = mid(C.AUTOM_PLATFORM);
+
+  // 10. PENTEST
+  const pentestMid = mid(C.PENTEST);
+
+  // 11. CERT COST
+  let certRange;
+  if (isFw)                     certRange = C.ISO_CERT_COST[sz];
+  else if (socType === 'type1')  certRange = C.SOC_CERT_TYPE1[sz];
+  else                           certRange = C.SOC_CERT_TYPE2[sz];
+  const certMid = mid(certRange);
+
+  // 12. YEAR 1 CASH TOTAL
+  // DIY internal labour excluded — it's opportunity cost, not an invoice.
+  const automCost = (automMode === 'autom') ? automMid : 0;
+  const y1CashMid = labourExt + labourIntCash + toolMid + pentestMid + certMid + automCost;
+  const y1CashLo  = Math.round(y1CashMid * C.RANGE_LO_MULT);
+  const y1CashHi  = Math.round(y1CashMid * C.RANGE_HI_MULT);
+
+  // 13. OPPORTUNITY COST OF INTERNAL TIME
+  // Priced at a premium over the salary day rate: engineers doing compliance
+  // are not shipping product. OPP_COST_PREMIUM captures this drag.
+  // Present in all approaches — DIY just has far more of it.
+  const oppCostMid = intDays * engDayR * C.OPP_COST_PREMIUM;
+  const oppCostLo  = Math.round(oppCostMid * C.HIDDEN_LO_MULT);
+  const oppCostHi  = Math.round(oppCostMid * C.HIDDEN_HI_MULT);
+
+  // 14. DIY RE-AUDIT RISK (expected value; only applied to DIY approach)
+  // 40% probability of failed Stage 2 audit × incremental re-audit cost
+  const reauditProb = 1 - C.DIY_PASS_RATE;  // 0.40
+  const reauditExpLo = approachMode === 'diy' ? Math.round(C.DIY_REAUDIT_COST[0] * reauditProb) : 0;
+  const reauditExpHi = approachMode === 'diy' ? Math.round(C.DIY_REAUDIT_COST[1] * reauditProb) : 0;
+
+  // 15. REALISTIC YEAR 1 TOTAL (cash + opportunity cost + expected re-audit risk for DIY)
+  const realY1Lo = y1CashLo + oppCostLo + reauditExpLo;
+  const realY1Hi = y1CashHi + oppCostHi + reauditExpHi;
+
+  // 15. DURATION & FTE
+  // Two components: (a) internal effort ÷ FTE capacity, (b) calendar floor.
+  // Final = max of both — you can't compress mandatory waiting periods.
+  // FTE is based on INTERNAL days only (intDays) — the customer doesn't care
+  // how busy the consultant is, only how much of their own team's time is consumed.
+  // DIY = 100% internal; Mixed = 30% internal; Full = 15% internal.
+  const matBand = maturity <= 2 ? 'low' : (maturity === 3 ? 'mid' : 'high');
+  const fteCap          = C.DURATION_FTE_CAP[approachMode];
+  const effectivePeople = Math.min(engSize, C.PARALLEL_CAP);
+  const effectiveCap    = effectivePeople * fteCap;   // team-level internal days/week on ISMS
+  const effortWeeks     = Math.ceil(intDays / (effectiveCap * 5));
+  const calendarFloor   = C.CALENDAR_FLOOR[approachMode][matBand];
+  const weeks = Math.max(effortWeeks, calendarFloor);
+  // Per-person FTE: fraction of each internal team member's week consumed by this project
+  const fte   = Math.max(0.05, Math.round((intDays / (weeks * 5 * effectivePeople)) * 100) / 100);
+
+  // 16. YEAR 2/3 ONGOING
+  const survLo = isFw ? C.SURV_COST_ISO[0] : Math.round(certRange[0] * C.SOC_REATTEST_PCT);
+  const survHi = isFw ? C.SURV_COST_ISO[1] : Math.round(certRange[1] * C.SOC_REATTEST_PCT);
+  const toolLo = automMode === 'autom' ? Math.round(automMid * 0.9) : C.TOOLING[0];
+  const toolHi = automMode === 'autom' ? Math.round(automMid * 1.1) : C.TOOLING[1];
+  const retLo  = approachMode === 'diy' ? 0 : C.RETAINER[0];
+  const retHi  = approachMode === 'diy' ? 0 : C.RETAINER[1];
+  const ogTotalLo = survLo + toolLo + retLo;
+  const ogTotalHi = survHi + toolHi + retHi;
+
+  // Year 3:
+  // ISO — surveillance drops out, replaced by re-certification audit (every 3 years)
+  // SOC — re-attestation recurs annually at the same cost as Year 2 (no change)
+  const recertLo = Math.round(certRange[0] * C.ISO_RECERT_PCT);
+  const recertHi = Math.round(certRange[1] * C.ISO_RECERT_PCT);
+  const yr3TotalLo = isFw ? (recertLo + toolLo + retLo) : ogTotalLo;
+  const yr3TotalHi = isFw ? (recertHi + toolHi + retHi) : ogTotalHi;
+
+  // ── UPDATE UI ──
+  document.getElementById('resFwLabel').textContent =
+    (isFw ? 'ISO 27001' : 'SOC 2') + ' · Year ' + activeYr + ' estimate';
+
+  if (activeYr === 1) {
+    document.getElementById('costRange').textContent = fmtR(y1CashLo, y1CashHi);
+    flashEl('costRange');
+    document.getElementById('costNote').textContent = 'Cash costs only. Opportunity cost of internal time shown below.';
+    document.getElementById('hiddenCost').textContent = '+ ' + fmtR(oppCostLo, oppCostHi);
+    const daysPerPerson = Math.round(intDays / engSize);
+    document.getElementById('hiddenNote').textContent =
+      '~' + Math.round(intDays) + ' person-days across ' + engSize + ' staff' +
+      (engSize > 1 ? ' (~' + daysPerPerson + ' days/person)' : '') +
+      ' × €' + Math.round(engDayR * C.OPP_COST_PREMIUM) + '/day opportunity cost';
+  } else if (activeYr === 2) {
+    document.getElementById('costRange').textContent = fmtR(ogTotalLo, ogTotalHi);
+    document.getElementById('costNote').textContent = isFw
+      ? 'Annual surveillance audit + tooling' + (approachMode !== 'diy' ? ' + advisory retainer' : '') + '.'
+      : 'Annual re-attestation + tooling' + (approachMode !== 'diy' ? ' + advisory retainer' : '') + '.';
+    document.getElementById('hiddenCost').textContent = 'Recurring annually';
+    document.getElementById('hiddenNote').textContent = 'Certification is not a one-time cost — budget for Years 2 & 3.';
+  } else {
+    document.getElementById('costRange').textContent = fmtR(yr3TotalLo, yr3TotalHi);
+    document.getElementById('costNote').textContent = isFw
+      ? 'Includes re-certification audit (every 3 years).'
+      : 'Annual re-attestation. SOC 2 is a permanent recurring cost.';
+    document.getElementById('hiddenCost').textContent = isFw ? 'Re-certification year' : 'Annual re-attestation';
+    document.getElementById('hiddenNote').textContent = isFw
+      ? 'Your certificate expires — re-certification adds ~70% of original cert cost.'
+      : 'SOC 2 reports expire after 12 months. This recurs every year indefinitely.';
+  }
+
+  // Metrics
+  document.getElementById('mEffort').textContent   = Math.round(effort);
+  document.getElementById('mDuration').textContent = weeks;
+  document.getElementById('mAudit').textContent    = C.AUDIT_DAYS[sz];
+  document.getElementById('mFte').textContent      = fte;
+
+  // Phases — weights interpolated by maturity (1=low, 5=high)
+  // Documentation-heavy phases shrink at high maturity (work already done).
+  // Audit-facing phases hold steady or grow (CB-driven, can't compress much).
+  // Each row: [name, w_at_mat1, w_at_mat5]
+  // All columns sum to 1.00 at both endpoints; linear interpolation in between.
+  const t = (maturity - 1) / 4; // 0.0 at mat1 → 1.0 at mat5
+  const lerp = (lo, hi) => Math.round((lo + (hi - lo) * t) * 1000) / 1000;
+  const rawPhases = isFw ? [
+    { name: 'Gap Analysis',         lo: 0.14, hi: 0.07, automSensitive: false },
+    { name: 'Risk Assessment',      lo: 0.18, hi: 0.11, automSensitive: false },
+    { name: 'Policy Development',   lo: 0.24, hi: 0.12, automSensitive: true  },
+    { name: 'Implementation',       lo: 0.28, hi: 0.32, automSensitive: true  },
+    { name: 'Internal Audit',       lo: 0.09, hi: 0.17, automSensitive: false },
+    { name: 'Certification Audit',  lo: 0.07, hi: 0.21, automSensitive: false },
+  ] : [
+    { name: 'Readiness Assessment', lo: 0.16, hi: 0.07, automSensitive: false },
+    { name: 'Control Mapping',      lo: 0.16, hi: 0.10, automSensitive: false },
+    { name: 'Policy Development',   lo: 0.22, hi: 0.11, automSensitive: true  },
+    { name: 'Evidence Collection',  lo: 0.26, hi: 0.30, automSensitive: true  },
+    { name: 'Audit Preparation',    lo: 0.11, hi: 0.22, automSensitive: false },
+    { name: 'Auditor Walkthroughs', lo: 0.09, hi: 0.20, automSensitive: false },
+  ];
+  // Automation nudge: platform compresses policy/evidence phases; manual expands them.
+  // automDelta: +0.10 for manual (more work), −0.08 for autom (templates + auto-collection)
+  const automDelta = automMode === 'manual' ? 0.10 : automMode === 'autom' ? -0.08 : 0;
+  // Interpolate then apply automation nudge, then renormalise to exactly 1.00
+  const phases = rawPhases.map(p => ({
+    name: p.name,
+    w: lerp(p.lo, p.hi) + (p.automSensitive ? automDelta : 0),
+  }));
+  const wSum = phases.reduce((s, p) => s + p.w, 0);
+  phases.forEach(p => { p.w = Math.max(0, p.w / wSum); });
+
+  document.getElementById('phaseRows').innerHTML = phases.map(p => {
+    const pct = Math.round(p.w * 100);
+    return `<div class="ph-row">
+      <span class="ph-name">${p.name}</span>
+      <div class="ph-bar-bg"><div class="ph-bar" style="width:${pct}%"></div></div>
+      <span class="ph-days">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  // Breakdown
+  const socAutom = automMode === 'autom';
+
+  // Row 1: advisory fees
+  if (approachMode === 'diy') {
+    document.getElementById('bkL1').innerHTML = 'Advisory / consultant fees (none)';
+    document.getElementById('bkV1').textContent = '€0';
+  } else {
+    const extDaysRounded = Math.round(extDays * 10) / 10;
+    document.getElementById('bkL1').innerHTML =
+      'Advisory / consultant fees <em>' + extDaysRounded + 'd × €' + Math.round(consultR).toLocaleString('de-DE') + '/day</em>';
+    document.getElementById('bkV1').textContent = fmt(labourExt);
+  }
+
+  // Row 2: internal labour
+  document.getElementById('bkL2').textContent =
+    approachMode === 'diy' ? 'Internal labour (all work, not invoiced)' : 'Internal labour cost';
+  document.getElementById('bkV2').textContent =
+    approachMode === 'diy' ? '€0' : fmt(labourIntCash);
+
+  // Row 3: security tooling — label updates when autom platform in use
+  document.getElementById('bkL3em').textContent =
+    socAutom ? 'base security tooling' : 'awareness + vuln scanning';
+  document.getElementById('bkV3').textContent = fmtR(C.TOOLING[0], C.TOOLING[1]);
+
+  // Row: compliance automation platform (shown whenever autom mode is on)
+  const automRow = document.getElementById('bkAutomRow');
+  automRow.style.display = socAutom ? 'flex' : 'none';
+  if (socAutom) {
+    document.getElementById('bkVAutom').textContent =
+      fmtR(Math.round(automMid * 0.9), Math.round(automMid * 1.1));
+  }
+
+  // Row: pentest, cert
+  document.getElementById('bkV4').textContent = fmtR(C.PENTEST[0], C.PENTEST[1]);
+  document.getElementById('bkCertLabel').textContent = isFw
+    ? 'Certification body (Stage 1 + 2)'
+    : (socType === 'type1' ? 'SOC 2 audit (Type I)' : 'SOC 2 audit (Type II)');
+  document.getElementById('bkV5').textContent = fmtR(certRange[0], certRange[1]);
+
+  // Opportunity cost line
+  document.getElementById('bkVOpp').textContent = fmtR(oppCostLo, oppCostHi);
+
+  // Re-audit risk row (DIY only)
+  const reauditRow = document.getElementById('bkReauditRow');
+  const isDiy = approachMode === 'diy';
+  reauditRow.style.display = isDiy ? 'flex' : 'none';
+  if (isDiy) {
+    const pct = Math.round((1 - C.DIY_PASS_RATE) * 100);
+    document.getElementById('bkReauditLbl').innerHTML =
+      'Re-audit risk <em>' + pct + '% probability × ' +
+      fmtR(C.DIY_REAUDIT_COST[0], C.DIY_REAUDIT_COST[1]) + '</em>';
+    document.getElementById('bkVReaudit').textContent = '+ ' + fmtR(reauditExpLo, reauditExpHi);
+  }
+
+  // Total label changes for DIY to signal expected value framing
+  document.getElementById('bkTotalLbl').textContent = isDiy
+    ? 'Expected total (incl. audit risk)'
+    : 'Realistic Year 1 total';
+  document.getElementById('bkTotal').textContent = fmtR(realY1Lo, realY1Hi);
+
+  // Donut chart
+  const isSoc = !isFw;
+  const donutSegments = [
+    { label: 'Advisory fees',      value: approachMode === 'diy' ? 0 : Math.round(labourExt),  color: isSoc ? '#0e2841' : '#4e1686' },
+    { label: 'Internal labour',    value: Math.round(labourIntCash),                            color: isSoc ? '#1a4a7a' : '#7b3fc4' },
+    { label: 'Tooling',            value: Math.round(toolMid),                                  color: isSoc ? '#2d6cb0' : '#9b6dd6' },
+    { label: 'Autom. platform',    value: automMode === 'autom' ? Math.round(automMid) : 0,     color: isSoc ? '#4a90d9' : '#b48ae0' },
+    { label: 'Pentest',            value: Math.round(pentestMid),                               color: '#f0a050' },
+    { label: 'Cert audit',         value: Math.round(certMid),                                  color: '#e97332' },
+    { label: 'Opp. cost',          value: Math.round(oppCostMid),                               color: '#ffd080' },
+  ].filter(d => d.value > 0);
+
+  const canvas = document.getElementById('bkDonut');
+  const ctx = canvas.getContext('2d');
+  const cx = 65, cy = 65, r = 56, inner = 34;
+  const total = donutSegments.reduce((s, d) => s + d.value, 0);
+  ctx.clearRect(0, 0, 130, 130);
+  let angle = -Math.PI / 2;
+  donutSegments.forEach(d => {
+    const sweep = (d.value / total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, angle, angle + sweep);
+    ctx.closePath();
+    ctx.fillStyle = d.color;
+    ctx.fill();
+    angle += sweep;
+  });
+  // punch inner hole
+  ctx.beginPath();
+  ctx.arc(cx, cy, inner, 0, 2 * Math.PI);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+
+  // Legend
+  document.getElementById('donutLegend').innerHTML = donutSegments.map(d =>
+    `<div class="donut-leg-row">
+      <span class="donut-leg-swatch" style="background:${d.color}"></span>
+      <span>${d.label}</span>
+      <span class="donut-leg-val">${fmt(d.value)}</span>
+    </div>`
+  ).join('');
+
+  // Implementation Insights
+  const insightKey = isFw ? 'iso' : 'soc';
+  const insightSet = C.INSIGHTS[insightKey][approachMode];
+  const approachLabel = { diy: 'DIY', mixed: 'Advisory-led', full: 'Fully outsourced' }[approachMode];
+  document.getElementById('insightsTitle').textContent =
+    (isFw ? 'ISO 27001' : 'SOC 2') + ' · ' + approachLabel + ' insights';
+  document.getElementById('insightsGrid').innerHTML =
+    insightSet.map(t => `<div class="insight-card">${t}</div>`).join('');
+
+  // Ongoing
+  const yrLabel = activeYr === 1 ? 2 : activeYr;
+  document.getElementById('ongoingLbl').textContent = 'Year ' + yrLabel + ' ongoing costs';
+  document.getElementById('og1Lbl').textContent = isFw
+    ? (activeYr === 3 ? 'Re-certification audit' : 'Surveillance audit')
+    : 'Annual re-attestation';
+  document.getElementById('og1V').textContent = activeYr === 3 && isFw
+    ? fmtR(recertLo, recertHi) : fmtR(survLo, survHi);
+  document.getElementById('og2V').textContent = fmtR(toolLo, toolHi);
+  document.getElementById('og3V').textContent =
+    approachMode === 'diy' ? 'Not applicable' : fmtR(retLo, retHi);
+  document.getElementById('ogRetainerRow').style.display =
+    approachMode === 'diy' ? 'none' : 'flex';
+  document.getElementById('ogTotal').textContent = activeYr === 3
+    ? fmtR(yr3TotalLo, yr3TotalHi) : fmtR(ogTotalLo, ogTotalHi);
+}
+
+function openCta() {
+  window.open(
+    'mailto:' + C.CTA_EMAIL +
+    '?subject=Certification Cost Estimate — ' + fw.toUpperCase() +
+    '&body=Hi BARE,%0A%0AI used your cost estimator and would like to discuss a fixed-fee proposal.%0A%0AFramework: ' + fw.toUpperCase(),
+    '_blank'
+  );
+}
+
+// ── INIT ──
+syncIntRate();
+calc();
+</script>
+</body>
+</html>
